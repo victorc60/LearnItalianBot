@@ -1,7 +1,7 @@
 import { Telegraf, session } from 'telegraf';
  // Подключаем dotenv для работы с переменными окружения
 import axios from 'axios'; // Для запросов к DeepSeek API
-import config from './config/default.json' assert { type: 'json' };
+import config from 'config';
 
 
 
