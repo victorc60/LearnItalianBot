@@ -1,6 +1,7 @@
 import { Telegraf, session } from 'telegraf';
 import 'dotenv/config'; // Подключаем dotenv для работы с переменными окружения
 import axios from 'axios'; // Для запросов к DeepSeek API
+import config from 'config';
 
 // Инициализация бота
 const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
