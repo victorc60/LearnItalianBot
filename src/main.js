@@ -1,10 +1,12 @@
 import { Telegraf, session } from 'telegraf';
-import 'dotenv/config'; // Подключаем dotenv для работы с переменными окружения
+ // Подключаем dotenv для работы с переменными окружения
 import axios from 'axios'; // Для запросов к DeepSeek API
-import config from 'config';
 
+
+const config = require('./config/default.json');
 // Инициализация бота
-const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
+
+const bot = new Telegraf(config.TELEGRAM_TOKEN);
 
 // Подключение middleware для сессий
 bot.use(session());
@@ -25,7 +27,7 @@ async function getDeepSeekResponse(messages) {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`, // API ключ DeepSeek
+          Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`, // API ключ DeepSeek
           'Content-Type': 'application/json',
         },
       }
