@@ -4,80 +4,82 @@ import config from 'config';
 
 // Инициализация бота
 const bot = new Telegraf(config.TELEGRAM_TOKEN);
-
-// Подключение middleware для сессий
 bot.use(session());
 
-// Инициализация сессии
-const INITIAL_SESSION = {
-  dialog: [], // История диалога
-};
+// Инициализация сессии (ограничение истории в 3000 символов)
+const INITIAL_SESSION = { dialog: "" };
 
 // Функция для запроса к DeepSeek API
 async function getDeepSeekResponse(messages) {
   try {
     const response = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
-      {
-        model: 'deepseek-chat',
-        messages: messages,
-      },
+      { model: 'deepseek-chat', messages },
       {
         headers: {
           Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 30000, // Устанавливаем таймаут 30 секунд для предотвращения зависаний
+        timeout: 30000,
       }
     );
-    return response.data.choices[0].message.content;
+
+    return response.data.choices?.[0]?.message?.content || null;
   } catch (error) {
     console.error('Ошибка при запросе к DeepSeek:', error.response?.data || error.message);
-    throw error;
+    return null;
   }
 }
 
 // Команда /start
 bot.command('start', async (ctx) => {
   ctx.session = INITIAL_SESSION;
-  await ctx.reply('Привет! Давай попрактикуем итальянский. Напиши что-нибудь, и я помогу тебе с исправлениями, объясню ошибки и задам интересный вопрос! 🤖');
+  await ctx.reply('Привет! Напиши что-нибудь на итальянском, и я помогу тебе с исправлениями, объясню ошибки и продолжу разговор! 🤖');
 });
 
 // Обработка текстовых сообщений
 bot.on('text', async (ctx) => {
   ctx.session ??= INITIAL_SESSION;
-
   const userMessage = ctx.message.text;
-  console.log(`💬 Сообщение от ${ctx.message.from.username || ctx.message.from.id}: ${userMessage}`);
 
-  await ctx.reply('🔄 Думаю над ответом...');
+  console.log(`💬 Сообщение от ${ctx.message.from.username || ctx.message.from.id}: ${userMessage}`);
+  
+  await ctx.reply('🔄 Анализирую ваш текст...');
 
   try {
-    ctx.session.dialog.push({ role: 'user', content: userMessage });
-
-    if (ctx.session.dialog.length > 10) {
-      ctx.session.dialog.shift();
+    // Обновляем историю, но ограничиваем длину (максимум 3000 символов)
+    ctx.session.dialog += `\nПользователь: ${userMessage}`;
+    if (ctx.session.dialog.length > 3000) {
+      ctx.session.dialog = ctx.session.dialog.slice(-3000);
     }
 
-    // Единый запрос к AI для исправления ошибок, генерации ответа и перевода
+    // Единый запрос к AI
     const messages = [
-      { role: 'system', content: `Ты эксперт по итальянскому языку и дружелюбный помощник. 
-        - Исправь ошибки в тексте пользователя и объясни, какие правила были нарушены.
-        - Сформулируй интересный креативный ответ на итальянском, чтобы поддержать разговор.
+      { role: 'system', content: `Ты эксперт по итальянскому языку.  
+        - Исправь ошибки в тексте пользователя.  
+        - Объясни, какие правила были нарушены.  
+        - Сформулируй креативный ответ на итальянском, чтобы поддержать разговор.  
         - Переведи этот ответ на русский.` },
       { role: 'user', content: `Текст: ${userMessage}` },
     ];
 
     const aiResponse = await getDeepSeekResponse(messages);
-
-    ctx.session.dialog.push({ role: 'assistant', content: aiResponse });
-    if (ctx.session.dialog.length > 10) {
-      ctx.session.dialog.shift();
+    if (!aiResponse) {
+      await ctx.reply('❌ Не удалось обработать запрос. Попробуйте позже.');
+      return;
     }
 
+    // Добавляем ответ в историю
+    ctx.session.dialog += `\nБот: ${aiResponse}`;
+    if (ctx.session.dialog.length > 3000) {
+      ctx.session.dialog = ctx.session.dialog.slice(-3000);
+    }
+
+    // Отправляем пользователю
     await ctx.reply(aiResponse, { parse_mode: 'Markdown' });
+
   } catch (e) {
-    console.log('🚨 Ошибка при обработке сообщения:', e.message);
+    console.error('🚨 Ошибка при обработке сообщения:', e.message);
     await ctx.reply('❌ Произошла ошибка на сервере. Попробуйте позже.');
   }
 });
