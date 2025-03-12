@@ -1,5 +1,6 @@
 {
     "TELEGRAM_TOKEN":"8133450445:AAH9nCkEnIfSXIgA4nsfAa7wU41BX6mlUjM",
-    "DEEPSEEK_API_KEY":"sk-b0a6a21a513e4fcd9cd3b5a2dc6f4225"
+    "DEEPSEEK_API_KEY":"sk-b0a6a21a513e4fcd9cd3b5a2dc6f4225",
+    "DATABASE_URL":"mysql://root:lhGNLTKqeLjbzCmwvQETdueYWTjIoqVs@shinkansen.proxy.rlwy.net:51387/railway"
 
 }
