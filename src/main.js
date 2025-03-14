@@ -3,6 +3,8 @@ import axios from 'axios';
 import config from 'config';
 import sequelize from './database/database.js';
 import User from './models/user.js';
+import StudyPlan from './models/studyPlan.js';
+import UserProgress from './models/userProgress.js';
 
 // Инициализация базы
 async function initDatabase() {
@@ -11,6 +13,11 @@ async function initDatabase() {
     console.log('✅ База данных подключена.');
     await sequelize.sync({ alter: true });
     console.log('✅ База данных синхронизирована.');
+    await sequelize.authenticate();
+    console.log('✅ Подключение к базе данных успешно!');
+    
+    await sequelize.sync({ alter: true });
+    console.log('✅ Таблицы синхронизированы!');
   } catch (error) {
     console.error('❌ Ошибка при подключении к базе:', error);
   }
